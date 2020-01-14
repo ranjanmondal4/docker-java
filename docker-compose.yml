@@ -1,0 +1,41 @@
+version: "3"
+
+# Define services
+services:
+  # App backend service
+  app-server:
+    # Configuration for building the docker image for the backend service
+    build:
+      context: . # Use an image built from the specified dockerfile in the `polling-app-server` directory.
+      dockerfile: Dockerfile
+    ports:
+      - "8090:8080"
+    restart: always
+    depends_on:
+        - sqlDB # This service depends on mysql. Start that first.
+    env_file:
+      - .env
+    networks: # Networks to join (Services on the same network can communicate with each other using their name)
+      - net
+
+# Database Service (Mysql)
+  sqlDB:
+     image: mysql:5.7.27
+     ports:
+        - "13306:3306"
+     restart: always
+     env_file:
+       - mysqldb.env
+     volumes:
+        - db-data:/var/lib/mysql
+     container_name: practise_app
+     networks:
+        - net
+
+# Volumes
+volumes:
+    db-data:
+
+# Networks to be created to facilitate communication between containers
+networks:
+  net:
