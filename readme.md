@@ -27,3 +27,16 @@ docker-compose logs --tail=100 -f
 
 # Docker stats
 docker stats
+
+# Volume information
+docker volume ls | grep <volume-name>
+docker volume inspect <vigrant-name>
+
+
+https://docs.spring.io/spring-data/data-redis/docs/current/reference/html/#redis.repositories.mapping
+
+redis-cli --cluster create <pod-0-ip>:<port> ... <pod-5-ip>:<port> --cluster-replicas 1
+
+https://www.youtube.com/watch?v=chIlHFwODvM
+https://www.digitalocean.com/community/tutorials/how-to-configure-a-redis-cluster-on-ubuntu-14-04
+

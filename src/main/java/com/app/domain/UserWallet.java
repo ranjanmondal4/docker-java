@@ -19,7 +19,7 @@ public class UserWallet {
     @Id
     @GeneratedValue(strategy=GenerationType.AUTO)
     private long userWalletId;
-//
-//    @ManyToOne
-//    private User user;
+
+    @ManyToOne
+    private User user;
 }
