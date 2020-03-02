@@ -8,7 +8,9 @@ import javax.websocket.DeploymentException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationListener;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
 
@@ -18,11 +20,12 @@ import com.app.service.SocketService;
 public class BootStrap implements ApplicationListener<ContextRefreshedEvent> {
 	private static final Logger LOGGER = LoggerFactory.getLogger(BootStrap.class);
 	
+	@Autowired
+	private SocketService clientEndPoint;
+	
 	@Override
 	public void onApplicationEvent(ContextRefreshedEvent event) {
-		
-		LOGGER.info("Bootstrap is called");
-		SocketService clientEndPoint = new SocketService();
+		//SocketService clientEndPoint = new SocketService();
 		try {
 			clientEndPoint.getWebSocketEndPoint();
 		} catch (DeploymentException e) {
@@ -36,6 +39,12 @@ public class BootStrap implements ApplicationListener<ContextRefreshedEvent> {
 			e.printStackTrace();
 		}
 		
+	}
+	
+	@Bean("clientEndPoint")
+	public SocketService getClientEndPoint(){
+		SocketService clientEndPoint = new SocketService();
+		return clientEndPoint;
 	}
 	
 //	@PostConstruct
