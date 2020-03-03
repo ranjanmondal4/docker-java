@@ -40,3 +40,5 @@ redis-cli --cluster create <pod-0-ip>:<port> ... <pod-5-ip>:<port> --cluster-rep
 https://www.youtube.com/watch?v=chIlHFwODvM
 https://www.digitalocean.com/community/tutorials/how-to-configure-a-redis-cluster-on-ubuntu-14-04
 
+https://spring.io/blog/2013/05/23/spring-framework-4-0-m1-websocket-support/
+https://tyrus-project.github.io/documentation/1.13.1/index/websocket-api.html

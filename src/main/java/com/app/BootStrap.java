@@ -20,13 +20,21 @@ import com.app.service.SocketService;
 public class BootStrap implements ApplicationListener<ContextRefreshedEvent> {
 	private static final Logger LOGGER = LoggerFactory.getLogger(BootStrap.class);
 	
-	@Autowired
-	private SocketService clientEndPoint;
+	//@Autowired
+	private SocketService clientEndPoint = null;
 	
 	@Override
 	public void onApplicationEvent(ContextRefreshedEvent event) {
 		//SocketService clientEndPoint = new SocketService();
 		try {
+			clientEndPoint = SocketService.getInstance();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		try {
+			
 			clientEndPoint.getWebSocketEndPoint();
 		} catch (DeploymentException e) {
 			// TODO Auto-generated catch block
@@ -41,11 +49,11 @@ public class BootStrap implements ApplicationListener<ContextRefreshedEvent> {
 		
 	}
 	
-	@Bean("clientEndPoint")
-	public SocketService getClientEndPoint(){
-		SocketService clientEndPoint = new SocketService();
-		return clientEndPoint;
-	}
+//	@Bean("clientEndPoint")
+//	public SocketService getClientEndPoint(){
+//		SocketService clientEndPoint = new SocketService();
+//		return clientEndPoint;
+//	}
 	
 //	@PostConstruct
 //    private void postConstructEvent() {

@@ -9,6 +9,11 @@ import com.app.service.SocketService;
 //import com.app.service.UserService;
 import com.app.utility.ResponseHandler;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
+
+import javax.websocket.DeploymentException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,40 +29,73 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/practise/api/v1")
 public class UserController {
 	private static final Logger LOGGER = LoggerFactory.getLogger(UserController.class);
-    @Autowired
-    private EnvConfiguration envConfiguration;
+	@Autowired
+	private EnvConfiguration envConfiguration;
 //
 //    @Autowired
 //    private UserService userService;
-    
-    @Autowired
-	private SocketService clientEndPoint;
 
-    @PostMapping(path = "/login")
-    public ResponseEntity<Object> login(){
+//	@Autowired
+//	private SocketService clientEndPoint;
 
-        return ResponseHandler.generateResponse(HttpStatus.OK, true, "Valid User", envConfiguration.getApplicationName());
-    }
+	@PostMapping(path = "/login")
+	public ResponseEntity<Object> login() {
 
-    @PostMapping(path = "/user")
-    public ResponseEntity<Object> addUser(@RequestBody AddUserDto userDto){
+		return ResponseHandler.generateResponse(HttpStatus.OK, true, "Valid User",
+				envConfiguration.getApplicationName());
+	}
 
-        //User user = userService.addUser(userDto);
-        return ResponseHandler.generateResponse(HttpStatus.OK, true, "User is created", userDto);
-    }
+	@PostMapping(path = "/user")
+	public ResponseEntity<Object> addUser(@RequestBody AddUserDto userDto) {
 
-    @PostMapping(path = "/user/wallet")
-    public ResponseEntity<Object> addUserWallet(){
+		// User user = userService.addUser(userDto);
+		return ResponseHandler.generateResponse(HttpStatus.OK, true, "User is created", userDto);
+	}
 
-      //  UserWallet userWallet = userService.addUserWallet();
-        return ResponseHandler.generateResponse(HttpStatus.OK, true, "User wallet is created", null);
-    }
-    
-    @GetMapping(path = "/close/socket")
-    public ResponseEntity<Object> closeWebsocket(){
-    	LOGGER.info("Close socket is called"); // clientEndPoint.closeSession()
-    	clientEndPoint.closeSession();
-        return ResponseHandler.generateResponse(HttpStatus.OK, true, "close socket", true);
-    }
+	@PostMapping(path = "/user/wallet")
+	public ResponseEntity<Object> addUserWallet() {
+
+		// UserWallet userWallet = userService.addUserWallet();
+		return ResponseHandler.generateResponse(HttpStatus.OK, true, "User wallet is created", null);
+	}
+
+	@GetMapping(path = "/close/socket")
+	public ResponseEntity<Object> closeWebsocket() {
+		LOGGER.info("Close socket is called"); // clientEndPoint.closeSession()
+		SocketService clientEndPoint = null;
+		try {
+			clientEndPoint = SocketService.getInstance();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		clientEndPoint.closeSession();
+		return ResponseHandler.generateResponse(HttpStatus.OK, true, "close socket", true);
+	}
+
+	@GetMapping(path = "/session")
+	public ResponseEntity<Object> getSession() {
+		SocketService clientEndPoint = null;
+		try {
+			clientEndPoint = SocketService.getInstance();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		try {
+			clientEndPoint.getWebSocketEndPoint();
+		} catch (DeploymentException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (URISyntaxException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return ResponseHandler.generateResponse(HttpStatus.OK, true, "add socket", true);
+	}
 
 }

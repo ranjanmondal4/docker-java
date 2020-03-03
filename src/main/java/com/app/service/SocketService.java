@@ -3,6 +3,8 @@ package com.app.service;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import javax.websocket.ClientEndpoint;
@@ -22,20 +24,34 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+
 @ClientEndpoint
 public class SocketService {
 	private static final Logger LOGGER = LoggerFactory.getLogger(SocketService.class);
 
+	public Session session = null;
 	
-	private Session session = null;
+	List<Session> sessions = new ArrayList<>();
+	
+	private static SocketService socketService = null;
 	
 	public void getWebSocketEndPoint() throws DeploymentException, IOException, URISyntaxException {
 
 		WebSocketContainer container = ContainerProvider.getWebSocketContainer();
+		
 		LOGGER.info("Session is null ? {}", session == null);
-		session = container.connectToServer(SocketService.class, new URI("wss://ws.kraken.com/"));
+		Session localSession = container.connectToServer(SocketService.class, new URI("wss://ws.kraken.com/"));
+		session = localSession;
+		sessions.add(localSession);
+		LOGGER.info("======1==== sessions size {}", sessions.size());
+		
+//		SocketService endpoint = new SocketService();
+//		
+//		session = container.connectToServer(endpoint, new URI("wss://ws.kraken.com/"));
+		
 
-		LOGGER.info("Session id {} is open ? {} ", session.getId(), session.isOpen());
+		LOGGER.info("Session id {} is open ? {} ", localSession.getId(), localSession.isOpen());
+		LOGGER.info("Local Session {} ", localSession);
 
 		try {
 			TimeUnit.SECONDS.sleep(4);
@@ -55,8 +71,6 @@ public class SocketService {
 		try {
 			if (message.startsWith("[")) {
 				LOGGER.info(message);
-//				if(session != null)
-//					LOGGER.info("Session id {} is open ? {} ", session.getId(), session.isOpen());
 			}
 		} catch (Exception ex) {
 			LOGGER.error("Error in onMessage: {}", ex.getMessage());
@@ -66,9 +80,8 @@ public class SocketService {
 	@OnClose
 	public void onClose(Session session, CloseReason reason) throws IOException {
 		LOGGER.info("Session id {} is closed due to Close code {}", session.getId(), reason.getCloseCode());
-//		LOGGER.info("Session id {} is open ? {} ", session.getId(), session.isOpen());
-		
-		startSocketConnection();
+
+		LOGGER.info("On close, last session {}, is open {}", session, session.isOpen());
 	}
 
 	@OnError
@@ -82,7 +95,6 @@ public class SocketService {
 		while(session == null) {
 			try {
 				getWebSocketEndPoint();
-//				LOGGER.info("Session id {} is open ? {} ", session.getId(), session.isOpen());
 			} catch (Exception e) {
 				LOGGER.error("Error in startSocketConnection {}", e.getMessage());
 				e.printStackTrace();
@@ -93,15 +105,31 @@ public class SocketService {
 	
 	//@Async
 	public void closeSession() {
+		LOGGER.info("Size of sessions {}", sessions.size());
+		for(Session session : sessions) {
+			LOGGER.info("-1- session {}, is open {}", session, session.isOpen());
+		}
+		Session lastSession = sessions.get(sessions.size() - 1);
+		LOGGER.info("-- last session {}", lastSession);
 		try {
-			LOGGER.info("Session id {} in close session", session.getId());
-			session.close();
+			lastSession.close(new CloseReason(CloseReason.CloseCodes.CLOSED_ABNORMALLY, "Socket closed"));
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
+		if(!lastSession.isOpen()) {
+			sessions.remove(lastSession);
+			session = null;
+		}
+		
+		for(Session session : sessions) {
+			LOGGER.info("-2- session {}, is open {}", session, session.isOpen());
+		}	
+		
+		LOGGER.info("====close session ==== sessions size {}", sessions.size());
+		
+		startSocketConnection();
 	}
-
 
 	private void sendMessage(String text) {
 		session.getAsyncRemote().sendText(text);
@@ -122,6 +150,15 @@ public class SocketService {
 		objectPayload.put("pair", marketPair);
 		objectPayload.put("subscription", typeOfSubscribtion);
 		return objectPayload.toString();
+	}
+	
+	public static SocketService getInstance() throws InterruptedException {
+		synchronized (SocketService.class) {
+			if (socketService == null) {
+				socketService = new SocketService();
+			}
+		}
+		return socketService;
 	}
 
 }
