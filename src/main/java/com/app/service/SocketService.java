@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -29,9 +30,9 @@ import org.slf4j.LoggerFactory;
 public class SocketService {
 	private static final Logger LOGGER = LoggerFactory.getLogger(SocketService.class);
 
-	public Session session = null;
+	private static Session session = null;
 	
-	List<Session> sessions = new ArrayList<>();
+//	List<Session> sessions = new ArrayList<>();
 	
 	private static SocketService socketService = null;
 	
@@ -39,26 +40,23 @@ public class SocketService {
 
 		WebSocketContainer container = ContainerProvider.getWebSocketContainer();
 		
-		LOGGER.info("Session is null ? {}", session == null);
+		LOGGER.info("Creation, Session is null ? {}", session == null);
 		Session localSession = container.connectToServer(SocketService.class, new URI("wss://ws.kraken.com/"));
 		session = localSession;
-		sessions.add(localSession);
-		LOGGER.info("======1==== sessions size {}", sessions.size());
 		
-//		SocketService endpoint = new SocketService();
-//		
-//		session = container.connectToServer(endpoint, new URI("wss://ws.kraken.com/"));
+		LOGGER.info("Creation, Local Session {} ", localSession);
+		LOGGER.info("Creation, session {} ", session);
+
+		String marketNames[] = new String[] {"XBT/USD", "BCH/USD"};
+		Arrays.asList(marketNames).stream().forEach(name -> {
+//			try {
+//				TimeUnit.SECONDS.sleep(4);
+				subscribeSingleChannel(name);
+//			} catch (Exception e) {
+//				e.printStackTrace();
+//			}
+		});
 		
-
-		LOGGER.info("Session id {} is open ? {} ", localSession.getId(), localSession.isOpen());
-		LOGGER.info("Local Session {} ", localSession);
-
-		try {
-			TimeUnit.SECONDS.sleep(4);
-			subscribeSingleChannel("XBT/USD");
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 	}
 
 	@OnOpen
@@ -70,7 +68,7 @@ public class SocketService {
 	public void onMessage(String message) {
 		try {
 			if (message.startsWith("[")) {
-				LOGGER.info(message);
+			//	LOGGER.info(message);
 			}
 		} catch (Exception ex) {
 			LOGGER.error("Error in onMessage: {}", ex.getMessage());
@@ -78,10 +76,18 @@ public class SocketService {
 	}
 
 	@OnClose
-	public void onClose(Session session, CloseReason reason) throws IOException {
-		LOGGER.info("Session id {} is closed due to Close code {}", session.getId(), reason.getCloseCode());
+	public void onClose(Session lastSession, CloseReason reason) throws IOException {
 
-		LOGGER.info("On close, last session {}, is open {}", session, session.isOpen());
+		LOGGER.info("On close, last session {}", lastSession);
+		LOGGER.info("On close, session {}", session);
+		LOGGER.info("On close, last session {}", lastSession);
+		
+		if(!lastSession.isOpen()) {
+			session = null;
+		}
+		
+		startSocketConnection();
+		
 	}
 
 	@OnError
@@ -91,7 +97,7 @@ public class SocketService {
 	}
 	
 	private void startSocketConnection() {
-		LOGGER.info("Inside, Session is null {} ", session == null);
+	LOGGER.info("startSocketConnection, Session is null {} ", session == null);
 		while(session == null) {
 			try {
 				getWebSocketEndPoint();
@@ -105,37 +111,23 @@ public class SocketService {
 	
 	//@Async
 	public void closeSession() {
-		LOGGER.info("Size of sessions {}", sessions.size());
-		for(Session session : sessions) {
-			LOGGER.info("-1- session {}, is open {}", session, session.isOpen());
-		}
-		Session lastSession = sessions.get(sessions.size() - 1);
-		LOGGER.info("-- last session {}", lastSession);
+		LOGGER.info("closeSession, last session {}", session);
 		try {
-			lastSession.close(new CloseReason(CloseReason.CloseCodes.CLOSED_ABNORMALLY, "Socket closed"));
+			session.close(new CloseReason(CloseReason.CloseCodes.CLOSED_ABNORMALLY, "Socket closed"));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		
-		if(!lastSession.isOpen()) {
-			sessions.remove(lastSession);
-			session = null;
-		}
-		
-		for(Session session : sessions) {
-			LOGGER.info("-2- session {}, is open {}", session, session.isOpen());
-		}	
-		
-		LOGGER.info("====close session ==== sessions size {}", sessions.size());
-		
-		startSocketConnection();
+		LOGGER.info("closeSession, session {}", session);
 	}
+	
 
 	private void sendMessage(String text) {
 		session.getAsyncRemote().sendText(text);
 	}
 
 	private void subscribeSingleChannel(String instrument) throws JSONException {
+//		LOGGER.info("instrument {}", instrument);
 		String payload = getPayLoad(instrument);
 		sendMessage(payload);
 	}
